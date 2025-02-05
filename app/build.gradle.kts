@@ -57,4 +57,20 @@ dependencies {
 dependencies {
     implementation("org.jxmapviewer:jxmapviewer2:2.6")
 }
+dependencies {
+    implementation("org.slf4j:slf4j-api:2.0.7")
+    implementation("ch.qos.logback:logback-classic:1.4.7")
+}
+dependencies {
+    implementation("com.formdev:flatlaf:3.2.1") // ✅ Pour le look & feel moderne
+    implementation("org.slf4j:slf4j-api:2.0.7") // ✅ Logger
+    implementation("ch.qos.logback:logback-classic:1.4.7") // ✅ Logback pour logs
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.0") // ✅ JSON Parsing
+    implementation("com.squareup.okhttp3:okhttp:4.10.0") // ✅ Pour les requêtes HTTP
+}
+dependencies {
+    implementation("com.github.kittinunf.fuel:fuel:2.3.1") // ✅ Fuel pour les requêtes HTTP
+    implementation("com.github.kittinunf.fuel:fuel-gson:2.3.1") // ✅ Désérialisation JSON avec Gson
+    implementation("com.google.code.gson:gson:2.9.0") // ✅ Gson pour parser les JSON
+}
 
