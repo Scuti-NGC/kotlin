@@ -8,19 +8,21 @@ import org.slf4j.LoggerFactory
 class MainController {
     private val model = StationModel()
     private lateinit var view: MainView
-    private var allStations: List<Station> = listOf() // ✅ Correction ici
+    private var allStations: List<Station> = listOf()
     private val logger = LoggerFactory.getLogger(MainController::class.java)
 
     fun setView(view: MainView) {
         this.view = view
+        logger.info("✅ Vue correctement liée au contrôleur")
     }
 
     fun loadOnlineData() {
+        logger.info("📡 Chargement des données depuis l'API...")
         val stations = model.fetchStationsOnline()
         allStations = stations
         view.updateData(allStations)
+        logger.info("✅ ${stations.size} stations chargées depuis l'API")
     }
-
 
     fun searchStationsByCity(city: String) {
         if (city.isEmpty()) {
@@ -32,13 +34,13 @@ class MainController {
         val stations = model.fetchStationsByCity(city)
 
         if (stations.isEmpty()) {
+            logger.warn("❌ Aucune station trouvée pour '$city'")
             view.showError("Aucune station trouvée pour '$city'.")
         } else {
+            logger.info("✅ ${stations.size} stations trouvées pour '$city'")
             view.updateData(stations)
         }
     }
-
-
 
     fun searchStationsByItinerary(startCity: String, endCity: String) {
         if (startCity.isEmpty() || endCity.isEmpty()) {

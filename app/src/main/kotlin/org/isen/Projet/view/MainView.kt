@@ -13,8 +13,18 @@ import javax.swing.border.EmptyBorder
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableRowSorter
 
+import org.slf4j.LoggerFactory
+
+
+
 class MainView(private val controller: MainController) : JFrame() {
-    private val columnNames = arrayOf("ID", "Adresse", "Ville", "Code Postal", "Carburants", "Gazole (€)", "SP95 (€)", "SP98 (€)", "Marque")
+    private val logger = LoggerFactory.getLogger(MainView::class.java)
+    private val columnNames = arrayOf(
+        "ID", "Adresse", "Ville", "Code Postal", "Carburants",
+        "Gazole (€)", "SP95 (€)", "SP98 (€)", "Marque",
+        "Toilettes", "Boutique", "Gonflage"
+    )
+
     private val tableModel = DefaultTableModel(columnNames, 0)
     private val table = JTable(tableModel)
 
@@ -30,6 +40,10 @@ class MainView(private val controller: MainController) : JFrame() {
     private val brandFilter = JComboBox(arrayOf("Toutes", "Total", "Carrefour", "Intermarché", "Leclerc", "Autres"))
     private val fuelFilter = JComboBox(arrayOf("Tous", "Gazole", "SP95", "SP98", "E10", "E85"))
 
+    private val toilettesCheck = JCheckBox("Toilettes")
+    private val boutiqueCheck = JCheckBox("Boutique")
+    private val gonflageCheck = JCheckBox("Gonflage")
+
     private val addToFavoritesButton = createStyledButton("⭐ Ajouter aux Favoris", Color(39, 174, 96))
     private val removeFromFavoritesButton = createStyledButton("❌ Retirer des Favoris", Color(231, 76, 60))
     private val showFavoritesButton = createStyledButton("⭐ Voir Favoris", Color(243, 156, 18))
@@ -37,6 +51,8 @@ class MainView(private val controller: MainController) : JFrame() {
     private var isDarkMode = false
     private var allStations: List<Array<String>> = listOf()
     private var favorites: MutableList<String> = loadFavorites()
+
+
 
     init {
         title = "⛽ Stations de Carburant - Interface Swing"
@@ -90,6 +106,16 @@ class MainView(private val controller: MainController) : JFrame() {
         gbc.gridx++
         topPanel.add(toggleThemeButton, gbc)
 
+        gbc.gridx = 0
+        gbc.gridy++
+        topPanel.add(JLabel("🔎 Filtres Services :"), gbc)
+        gbc.gridx++
+        topPanel.add(toilettesCheck, gbc)
+        gbc.gridx++
+        topPanel.add(boutiqueCheck, gbc)
+        gbc.gridx++
+        topPanel.add(gonflageCheck, gbc)
+
         val sorter = TableRowSorter(tableModel)
         table.rowSorter = sorter
         table.rowHeight = 30
@@ -111,13 +137,18 @@ class MainView(private val controller: MainController) : JFrame() {
         mainPanel.add(bottomPanel, BorderLayout.SOUTH)
 
         add(mainPanel)
+
+        controller.setView(this)
+
         searchButton.addActionListener {
             val city = searchField.text.trim()
+            if (city.isEmpty()) {
+                showError("Veuillez entrer une ville.")
+                return@addActionListener
+            }
             controller.searchStationsByCity(city)
         }
 
-
-        searchButton.addActionListener { applyFilters() }
         searchItineraryButton.addActionListener { searchItinerary() }
         resetButton.addActionListener { resetFilters() }
         showFavoritesButton.addActionListener { showFavorites() }
@@ -125,6 +156,9 @@ class MainView(private val controller: MainController) : JFrame() {
         addToFavoritesButton.addActionListener { addSelectedToFavorites() }
         removeFromFavoritesButton.addActionListener { removeSelectedFromFavorites() }
     }
+
+
+
 
     private fun toggleTheme() {
         if (isDarkMode) {
@@ -140,6 +174,10 @@ class MainView(private val controller: MainController) : JFrame() {
         val selectedFuel = fuelFilter.selectedItem as String
         val searchText = searchField.text.trim()
 
+        val filterToilettes = toilettesCheck.isSelected
+        val filterBoutique = boutiqueCheck.isSelected
+        val filterGonflage = gonflageCheck.isSelected
+
         val filteredStations = allStations.filter {
             val brandMatch = selectedBrand == "Toutes" || it[8] == selectedBrand ||
                     (selectedBrand == "Autres" && !arrayOf("Total", "Carrefour", "Intermarché", "Leclerc").contains(it[8]))
@@ -147,12 +185,22 @@ class MainView(private val controller: MainController) : JFrame() {
             val fuelMatch = selectedFuel == "Tous" || it[4].contains(selectedFuel, ignoreCase = true)
             val cityMatch = searchText.isEmpty() || it[2].contains(searchText, ignoreCase = true)
 
-            brandMatch && fuelMatch && cityMatch
+            val toilettesMatch = !filterToilettes || it[9] == "✅"
+            val boutiqueMatch = !filterBoutique || it[10] == "✅"
+            val gonflageMatch = !filterGonflage || it[11] == "✅"
+
+            brandMatch && fuelMatch && cityMatch && toilettesMatch && boutiqueMatch && gonflageMatch
         }
+
+        logger.info("✅ ${filteredStations.size} stations affichées après filtrage")
 
         tableModel.setRowCount(0)
         filteredStations.forEach { tableModel.addRow(it) }
     }
+
+
+
+
     private fun createStyledButton(text: String, bgColor: Color): JButton {
         val button = JButton(text)
         button.background = bgColor
@@ -182,7 +230,7 @@ class MainView(private val controller: MainController) : JFrame() {
         fuelFilter.selectedIndex = 0
         controller.loadOnlineData()
 
-        tableModel.setRowCount(0)  // Vide le tableau des stations affichées
+        tableModel.setRowCount(0)
 
     }
 
@@ -252,7 +300,10 @@ class MainView(private val controller: MainController) : JFrame() {
                 station.priceGazole?.toString() ?: "N/A",
                 station.priceSP95?.toString() ?: "N/A",
                 station.priceSP98?.toString() ?: "N/A",
-                station.brand
+                station.brand,
+                if (station.toilettes) "✅" else "❌",
+                if (station.boutique) "✅" else "❌",
+                if (station.gonflage) "✅" else "❌"
             )
         }
 
@@ -261,6 +312,10 @@ class MainView(private val controller: MainController) : JFrame() {
         table.revalidate()
         table.repaint()
     }
+
+
+
+
 
     fun showError(message: String) {
         JOptionPane.showMessageDialog(this, message, "Erreur", JOptionPane.ERROR_MESSAGE)
