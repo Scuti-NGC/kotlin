@@ -86,10 +86,10 @@ class StationModel {
         val objectMapper = jacksonObjectMapper()
         val logger = LoggerFactory.getLogger(StationModel::class.java)
 
-        // ✅ Encoder la ville pour éviter les erreurs d'URL
+
         val encodedCity = URLEncoder.encode(city, "UTF-8")
 
-        // ✅ Définition des APIs principale et secondaire
+
         val apiUrls = listOf(
             "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/prix-des-carburants-j-1/records?where=com_arm_name LIKE '$encodedCity'&limit=100",
             "https://www.prix-carburants.gouv.fr/rubrique/opendata/" // API gouvernementale
@@ -104,7 +104,7 @@ class StationModel {
             if (!response.isSuccessful) {
                 logger.warn("⚠ Échec de l'API ($url) avec erreur ${response.code} - ${response.message}")
                 response.close()
-                continue // ✅ Essayer l’API suivante
+                continue
             }
 
             val jsonData = response.body?.string()
@@ -114,14 +114,14 @@ class StationModel {
 
             if (jsonData.isNullOrEmpty()) {
                 logger.error("❌ JSON vide ou null, impossible de parser.")
-                continue // ✅ Essayer l’API suivante
+                continue
             }
 
             val parsedData = objectMapper.readTree(jsonData)
 
             if (!parsedData.has("results")) {
                 logger.error("❌ Clé 'results' absente dans la réponse JSON.")
-                continue // ✅ Essayer l’API suivante
+                continue
             }
 
             val results = parsedData["results"]
@@ -131,7 +131,7 @@ class StationModel {
                     val stationCity = record["com_arm_name"]?.asText() ?: "Ville inconnue"
 
                     if (!stationCity.contains(city, ignoreCase = true)) {
-                        continue // ✅ Ignorer les villes incorrectes
+                        continue
                     }
 
                     stationsList.add(
@@ -152,7 +152,7 @@ class StationModel {
                 }
             }
 
-            // ✅ Si une API a réussi, on arrête ici
+
             return stationsList
         }
 
@@ -166,7 +166,7 @@ class StationModel {
     fun fetchStationsByItinerary(startCity: String, endCity: String): List<Station> {
         logger.info("📍 Recherche des stations entre '$startCity' et '$endCity'...")
 
-        // Récupérer les coordonnées GPS des villes
+
         val startCoords = getCityCoordinates(startCity)
         val endCoords = getCityCoordinates(endCity)
         if (startCoords == null || endCoords == null) {
@@ -176,11 +176,11 @@ class StationModel {
         logger.info("🔍 Coordonnées de $startCity : ${startCoords.first}, ${startCoords.second}")
         logger.info("🔍 Coordonnées de $endCity : ${endCoords.first}, ${endCoords.second}")
 
-        // Récupérer toutes les stations
+
         val allStations = fetchStationsOnline()
         logger.info("📊 Nombre total de stations récupérées : ${allStations.size}")
 
-        // Filtrer les stations situées entre les deux villes
+
         val filteredStations = allStations.filter { station ->
             val stationCoords = getCityCoordinates(station.city)
             if (stationCoords != null) {
@@ -195,7 +195,7 @@ class StationModel {
         return filteredStations
     }
 
-    // Fonction pour récupérer les coordonnées GPS d'une ville
+
     fun getCityCoordinates(city: String): Pair<Double, Double>? {
         val url = "https://nominatim.openstreetmap.org/search?format=json&q=${URLEncoder.encode(city, "UTF-8")}"
         val request = Request.Builder().url(url).build()
@@ -216,7 +216,7 @@ class StationModel {
         }
     }
 
-    // Vérifier si une station est entre deux points (approximation linéaire)
+
     fun isBetween(start: Pair<Double, Double>, end: Pair<Double, Double>, point: Pair<Double, Double>): Boolean {
         val (lat1, lon1) = start
         val (lat2, lon2) = end

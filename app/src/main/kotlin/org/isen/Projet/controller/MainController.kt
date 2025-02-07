@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory
 class MainController {
     private val model = StationModel()
     private lateinit var view: MainView
-    private var allStations: List<Station> = listOf() // ✅ Correction ici
+    private var allStations: List<Station> = listOf()
     private val logger = LoggerFactory.getLogger(MainController::class.java)
 
     fun setView(view: MainView) {

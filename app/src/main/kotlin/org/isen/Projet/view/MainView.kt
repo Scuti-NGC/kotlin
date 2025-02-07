@@ -182,7 +182,7 @@ class MainView(private val controller: MainController) : JFrame() {
         fuelFilter.selectedIndex = 0
         controller.loadOnlineData()
 
-        tableModel.setRowCount(0)  // Vide le tableau des stations affichées
+        tableModel.setRowCount(0)
 
     }
 
